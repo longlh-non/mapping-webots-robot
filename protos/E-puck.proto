@@ -38,7 +38,6 @@ PROTO E-puck [
   field SFBool             kinematic                    FALSE                    # Defines whether the robot motion and its sensors are computed according to a 2D kinematics algorithm.
   field MFNode             extensionSlot1               []                       # CUSTOM: adds a slot for a new device
   field MFNode             extensionSlot2               []                       # CUSTOM: adds a slot for a new device
-  field MFNode             extensionSlot3               []                       # CUSTOM: adds a slot for a new device
 ]
 {
 %<
@@ -1143,11 +1142,6 @@ Robot {
     DEF EXTENSION_SLOT Transform {
       translation 0 0 0
       children IS extensionSlot2
-    }
-    
-    DEF EXTENSION_SLOT Transform {
-      translation 0 0 0
-      children IS extensionSlot3
     }
   ]
   name IS name
