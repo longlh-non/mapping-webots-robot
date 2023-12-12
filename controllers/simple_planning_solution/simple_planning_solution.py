@@ -66,7 +66,7 @@ def start_mapping(robot):
     # Enable Distance sensor
     prox_sensors = []
     for i in range(8):
-        prox_sensors.append(robot.getDistanceSensor(f"ps{i}"))
+        prox_sensors.append(robot.getDevice(f"ps{i}"))
         prox_sensors[i].enable(timestep)
 
     # Calculate the parameters of the simulation
@@ -92,11 +92,73 @@ def start_mapping(robot):
             print(f"ps{i}: {sens.getValue()}")
 
         # CHeck sensor data
-        left_wall = prox_sensors[5].getValue() > 80
-        left_corner = prox_sensors[6].getValue() > 80
-        front_wall = prox_sensors[7].getValue() > 80
-
+        # front_wall = prox_sensors[7].getValue() > 70 or prox_sensors[0].getValue() > 70
+        # left_wall = prox_sensors[5].getValue() > 80
+        # left_corner = prox_sensors[6].getValue() > 80
+        # right_wall = prox_sensors[2].getValue() > 80
+        # right_corner = prox_sensors[1].getValue() > 80
+        # no_wall_at_all = prox_sensors[1].getValue() < 80 and prox_sensors[2].getValue() < 80 and left_wall == False and left_corner == False and front_wall == False
         ranges = lidar.getRangeImage()
+
+        # # Enter here functions to send actuator commands, like:
+        # #  motor.setPosition(10.0)
+
+        leftSpeed = MAX_SPEED
+        rightSpeed = MAX_SPEED
+
+        # print("No wall found")
+        # if no_wall_at_all:
+        #     print("No wall found")
+        # else:
+        #     if front_wall:
+        #         print("Turn right")
+        #         leftSpeed = MAX_SPEED
+        #         rightSpeed = -MAX_SPEED
+        #
+        #     else:
+        #         if left_wall:
+        #             print("Wall on the left")
+        #             leftSpeed = MAX_SPEED
+        #             rightSpeed = -MAX_SPEED
+        #         else:
+        #             print("Turn left")
+        #             leftSpeed = -MAX_SPEED / 8
+        #             rightSpeed = MAX_SPEED
+        #
+        #         if left_corner:
+        #             leftSpeed = MAX_SPEED
+        #             rightSpeed = MAX_SPEED / 8
+
+                # if right_wall:
+                #     print("Wall on the right")
+                #     leftSpeed = -MAX_SPEED
+                #     rightSpeed = MAX_SPEED
+                # else:
+                #     print("Turn right")
+                #     leftSpeed = -MAX_SPEED
+                #     rightSpeed = MAX_SPEED / 8
+                #
+                # if right_corner:
+                #     leftSpeed = MAX_SPEED / 8
+                #     rightSpeed = MAX_SPEED
+
+        # First rotate
+        current_yaw = get_yaw(iu)
+        if abs(target - current_yaw) > angle_treshold:
+            leftSpeed = 0.3 * MAX_SPEED
+            rightSpeed = -0.3 * MAX_SPEED
+        else:
+            # When rotation is complete, go straight
+            current_coordinate = gps.getValues()
+            distance_to_target_x = abs(current_coordinate[0] - destination_coordinate[0])
+            distance_to_target_y = abs(current_coordinate[1] - destination_coordinate[1])
+            if distance_to_target_x < distance_threshold and distance_to_target_y < distance_threshold:
+                leftSpeed = 0
+                rightSpeed = 0
+            else:
+                leftSpeed = MAX_SPEED
+                rightSpeed = MAX_SPEED
+
 
         x_r, y_r = [], []
         x_w, y_w = [], []
@@ -113,56 +175,16 @@ def start_mapping(robot):
         plt.pause(0.01)
         plt.show()
 
-        # First rotate
-        # current_yaw = get_yaw(iu)
-        # if abs(target - current_yaw) > angle_treshold:
-        #     leftSpeed = 0.3 * MAX_SPEED
-        #     rightSpeed = -0.3 * MAX_SPEED
-        # else:
-        #     # When rotation is complete, go straight
-        #     current_coordinate = gps.getValues()
-        #     distance_to_target_x = abs(current_coordinate[0] - destination_coordinate[0])
-        #     distance_to_target_y = abs(current_coordinate[1] - destination_coordinate[1])
-        #     if distance_to_target_x < distance_threshold and distance_to_target_y < distance_threshold:
-        #         leftSpeed = 0
-        #         rightSpeed = 0
-        #     else:
-        #         leftSpeed = MAX_SPEED
-        #         rightSpeed = MAX_SPEED
-
-        # factor=0.0186
-        # deltaX=(leftSpeed*factor+rightSpeed*factor)/2*timestep/1000
-        # X+=deltaX
-        # theta+=(rightSpeed*factor-leftSpeed*factor)/0.052*timestep/1000
-        # xw+=np.cos(theta)*deltaX
-        # yw+=np.sin(theta)*deltaX
-        # # Enter here functions to send actuator commands, like:
-        # #  motor.setPosition(10.0)
-
-        leftSpeed = MAX_SPEED
-        rightSpeed = MAX_SPEED
-
-        if front_wall:
-            print("Turn right")
-            leftSpeed = MAX_SPEED
-            rightSpeed = -MAX_SPEED
-
-        else:
-            if left_wall:
-                print("Wall on the left")
-                leftSpeed = MAX_SPEED
-                rightSpeed = -MAX_SPEED
-            else:
-                print("Turn left")
-                leftSpeed = -MAX_SPEED/8
-                rightSpeed = MAX_SPEED
-
-            if left_corner:
-                leftSpeed = MAX_SPEED
-                rightSpeed = MAX_SPEED/8
 
         leftMotor.setVelocity(leftSpeed)
         rightMotor.setVelocity(rightSpeed)
+
+        factor = 0.0186
+        deltaX = (leftSpeed * factor + rightSpeed * factor) / 2 * timestep / 1000
+        X += deltaX
+        theta += (rightSpeed * factor - leftSpeed * factor) / 0.052 * timestep / 1000
+        xw += np.cos(theta) * deltaX
+        yw += np.sin(theta) * deltaX
 
 
 if __name__ == "__main__":
