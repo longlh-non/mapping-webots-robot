@@ -1240,6 +1240,8 @@ E-puck {
     }
   ]
   extensionSlot1 [
+    Display {
+    }
     GPS {
     }
   ]

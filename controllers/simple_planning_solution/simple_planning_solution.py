@@ -39,8 +39,6 @@ def start_mapping(robot):
     degrees = 90  # Desired amount of rotation
     distance = 0.2  # Desired amount of linear translation
 
-    angles = np.linspace(3.1415, -3.1415, 360)
-
     # Sensors
 
     iu = robot.getDevice('inertial unit')
@@ -51,6 +49,8 @@ def start_mapping(robot):
     lidar = robot.getDevice('LDS-01')
     lidar.enable(timestep)
     lidar.enablePointCloud()
+
+    display = robot.getDevice('display')
 
     # Some devices, such as the InertialUnit, need some time to "warm up"
     robot.step(1000)
@@ -87,19 +87,6 @@ def start_mapping(robot):
 
     # Start executing
     while robot.step(timestep) != -1:
-
-        for i, sens in enumerate(prox_sensors):
-            print(f"ps{i}: {sens.getValue()}")
-
-        # CHeck sensor data
-        # front_wall = prox_sensors[7].getValue() > 70 or prox_sensors[0].getValue() > 70
-        # left_wall = prox_sensors[5].getValue() > 80
-        # left_corner = prox_sensors[6].getValue() > 80
-        # right_wall = prox_sensors[2].getValue() > 80
-        # right_corner = prox_sensors[1].getValue() > 80
-        # no_wall_at_all = prox_sensors[1].getValue() < 80 and prox_sensors[2].getValue() < 80 and left_wall == False and left_corner == False and front_wall == False
-        ranges = lidar.getRangeImage()
-
         # # Enter here functions to send actuator commands, like:
         # #  motor.setPosition(10.0)
 
@@ -159,7 +146,12 @@ def start_mapping(robot):
                 leftSpeed = MAX_SPEED
                 rightSpeed = MAX_SPEED
 
+        # 1. Initialization
+        angles = np.linspace(3.1415, -3.1415, 360)
+        ranges = lidar.getRangeImage()
+        print("ranges: ", ranges)
 
+        # 2. Data Processing:
         x_r, y_r = [], []
         x_w, y_w = [], []
         for i, angle in enumerate(angles):
@@ -170,15 +162,17 @@ def start_mapping(robot):
             x_w.append(np.cos(theta)*x_i + np.cos(theta+1.57)*y_i +xw)
             y_w.append(np.cos(theta-1.57)*x_i + np.cos(theta)*y_i +yw)
 
+        # 3. Visualization
         plt.ion()
         plt.plot(x_w, y_w, '.')
         plt.pause(0.01)
         plt.show()
 
-
+        # 4. Robot Movement Simulation
         leftMotor.setVelocity(leftSpeed)
         rightMotor.setVelocity(rightSpeed)
 
+        # 5. Kinematic Update
         factor = 0.0186
         deltaX = (leftSpeed * factor + rightSpeed * factor) / 2 * timestep / 1000
         X += deltaX
